@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RHorizon - Gestion des Ressources Humaines</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Page de connexion/inscription -->
+    <div id="login-page" class="page active">
+        <div class="login-container">
+            <div class="login-card">
+                <div class="login-header">
+                    <h1>RHorizon</h1>
+                    <p>Gestion des Ressources Humaines</p>
+                </div>
+                
+                <!-- Onglets Connexion/Inscription -->
+                <div class="auth-tabs">
+                    <button type="button" class="auth-tab active" id="login-tab" onclick="switchAuthTab('login')">Connexion</button>
+                    <button type="button" class="auth-tab" id="signup-tab" onclick="switchAuthTab('signup')">Inscription</button>
+                </div>
+
+                <!-- Formulaire de connexion -->
+                <form id="login-form" class="auth-form active">
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" required placeholder="exemple@entreprise.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Mot de passe</label>
+                        <input type="password" id="password" required placeholder="••••••••">
+                    </div>
+                    <button type="button" class="btn btn-primary btn-block" onclick="handleLoginClick()">Se connecter</button>
+                </form>
+
+                <!-- Formulaire d'inscription -->
+                <form id="signup-form" class="auth-form">
+                    <div class="form-group">
+                        <label for="signup-email">Email</label>
+                        <input type="email" id="signup-email" required placeholder="exemple@entreprise.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="signup-name">Nom complet</label>
+                        <input type="text" id="signup-name" required placeholder="Nom Prénom">
+                    </div>
+                    <div class="form-group">
+                        <label for="signup-password">Mot de passe</label>
+                        <input type="password" id="signup-password" required placeholder="••••••••" minlength="6">
+                    </div>
+                    <div class="form-group">
+                        <label for="signup-password-confirm">Confirmer le mot de passe</label>
+                        <input type="password" id="signup-password-confirm" required placeholder="••••••••" minlength="6">
+                    </div>
+                    <button type="button" class="btn btn-primary btn-block" onclick="handleSignupClick()">S'inscrire</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application principale -->
+    <div id="app" class="app hidden">
+        <!-- Menu latéral -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>RHorizon</h2>
+                <p>Gestion RH</p>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active" data-page="dashboard">
+                    <span class="nav-icon">📊</span>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#" class="nav-item" data-page="services">
+                    <span class="nav-icon">🏢</span>
+                    <span>Services</span>
+                </a>
+                <a href="#" class="nav-item" data-page="employees">
+                    <span class="nav-icon">👥</span>
+                    <span>Employés</span>
+                </a>
+                <a href="#" class="nav-item" data-page="contracts">
+                    <span class="nav-icon">📄</span>
+                    <span>Contrats</span>
+                </a>
+                <a href="#" class="nav-item" data-page="positions">
+                    <span class="nav-icon">💼</span>
+                    <span>Postes</span>
+                </a>
+                <a href="#" class="nav-item" data-page="leaves">
+                    <span class="nav-icon">🏖️</span>
+                    <span>Congés</span>
+                </a>
+                <a href="#" class="nav-item" data-page="attendance">
+                    <span class="nav-icon">⏰</span>
+                    <span>Présences</span>
+                </a>
+                <a href="#" class="nav-item" data-page="payroll">
+                    <span class="nav-icon">💰</span>
+                    <span>Paie</span>
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <button id="logout-btn" class="btn btn-secondary btn-block">Déconnexion</button>
+            </div>
+        </aside>
+
+        <!-- Contenu principal -->
+        <main class="main-content">
+            <!-- Header avec icône paramètres -->
+            <header class="app-header">
+                <div class="header-content">
+                    <h1 class="page-title" id="current-page-title">Tableau de bord</h1>
+                    <div class="header-actions">
+                        <div class="user-info" id="user-info">
+                            <span id="user-name">Utilisateur</span>
+                        </div>
+                        <div class="settings-dropdown" id="settings-dropdown">
+                            <button class="settings-btn" id="settings-btn" onclick="toggleSettingsMenu()">
+                                <span class="settings-icon">⚙️</span>
+                                <span>Paramètres</span>
+                            </button>
+                            <div class="settings-menu hidden" id="settings-menu">
+                                <a href="#" class="settings-menu-item" data-page="users" onclick="showPage('users'); closeSettingsMenu();">
+                                    <span class="menu-icon">👤</span>
+                                    <span>Utilisateurs</span>
+                                </a>
+                                <a href="#" class="settings-menu-item" data-page="roles" onclick="showPage('roles'); closeSettingsMenu();">
+                                    <span class="menu-icon">🔐</span>
+                                    <span>Rôles & Permissions</span>
+                                </a>
+                                <a href="#" class="settings-menu-item" data-page="audit" onclick="showPage('audit'); closeSettingsMenu();">
+                                    <span class="menu-icon">📋</span>
+                                    <span>Audit Log</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+            <!-- Dashboard -->
+            <section id="dashboard" class="page-content active">
+                <div class="content-header">
+                    <h1>Tableau de bord</h1>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-card clickable" id="stat-card-employees" onclick="showEmployeesModal()">
+                        <div class="stat-icon">👥</div>
+                        <div class="stat-info">
+                            <h3>Nombre d'employés</h3>
+                            <p class="stat-value" id="stat-employees">0</p>
+                            <p class="stat-hint">Cliquer pour voir la liste</p>
+                        </div>
+                    </div>
+                    <div class="stat-card clickable" id="stat-card-absences" onclick="showAbsencesModal()">
+                        <div class="stat-icon">🏖️</div>
+                        <div class="stat-info">
+                            <h3>Absences en cours</h3>
+                            <p class="stat-value" id="stat-absences">0</p>
+                            <p class="stat-hint">Cliquer pour voir les détails</p>
+                        </div>
+                    </div>
+                    <div class="stat-card clickable" id="stat-card-overtime" onclick="showOvertimeModal()">
+                        <div class="stat-icon">⏰</div>
+                        <div class="stat-info">
+                            <h3>Heures supplémentaires</h3>
+                            <p class="stat-value" id="stat-overtime">0h</p>
+                            <p class="stat-hint">Cliquer pour voir les détails</p>
+                        </div>
+                    </div>
+                    <div class="stat-card alert clickable" id="stat-card-alerts" onclick="showAlertsModal()">
+                        <div class="stat-icon">⚠️</div>
+                        <div class="stat-info">
+                            <h3>Alertes RH</h3>
+                            <p class="stat-value" id="stat-alerts">0</p>
+                            <p class="stat-hint">Cliquer pour voir les détails</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="alerts-section">
+                    <h2>Alertes récentes</h2>
+                    <div id="alerts-list" class="alerts-list">
+                        <!-- Les alertes seront ajoutées dynamiquement -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Gestion des employés -->
+            <section id="employees" class="page-content">
+                <div class="content-header">
+                    <h1>Gestion des employés</h1>
+                    <button class="btn btn-primary" id="add-employee-btn">+ Ajouter un employé</button>
+                </div>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Nom</th>
+                                <th>Prénom</th>
+                                <th>Poste</th>
+                                <th>Salaire de base</th>
+                                <th>Contrat</th>
+                                <th>Date d'embauche</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="employees-table-body">
+                            <!-- Les employés seront ajoutés dynamiquement -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Gestion des postes -->
+            <section id="positions" class="page-content">
+                <div class="content-header">
+                    <h1>Gestion des postes</h1>
+                    <button class="btn btn-primary" id="add-position-btn">+ Ajouter un poste</button>
+                </div>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Intitulé du poste</th>
+                                <th>Département</th>
+                                <th>Salaire min</th>
+                                <th>Salaire max</th>
+                                <th>Nombre d'employés</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="positions-table-body">
+                            <!-- Les postes seront ajoutés dynamiquement -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Gestion des congés -->
+            <section id="leaves" class="page-content">
+                <div class="content-header">
+                    <h1>Gestion des congés</h1>
+                    <button class="btn btn-primary" id="request-leave-btn">+ Demander un congé</button>
+                </div>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Employé</th>
+                                <th>Type</th>
+                                <th>Date début</th>
+                                <th>Date fin</th>
+                                <th>Nombre de jours</th>
+                                <th>Statut</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leaves-table-body">
+                            <!-- Les congés seront ajoutés dynamiquement -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Gestion du pointage -->
+            <section id="attendance" class="page-content">
+                <div class="content-header">
+                    <h1>Gestion des heures et pointage</h1>
+                    <button class="btn btn-primary" id="add-attendance-btn">+ Ajouter un pointage</button>
+                </div>
+                <div class="punch-status">
+                    <div class="status-card" id="punch-status-card">
+                        <p>Heure actuelle : <strong id="current-time"></strong></p>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Employé</th>
+                                <th>Heure arrivée</th>
+                                <th>Heure départ</th>
+                                <th>Retard</th>
+                                <th>Heures travaillées</th>
+                                <th>Heures supplémentaires</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="attendance-table-body">
+                            <!-- Les pointages seront ajoutés dynamiquement -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Gestion des salaires -->
+            <section id="payroll" class="page-content">
+                <div class="content-header">
+                    <h1>Gestion des salaires</h1>
+                    <button class="btn btn-primary" id="generate-payslip-btn">+ Générer un bulletin</button>
+                </div>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Employé</th>
+                                <th>Période</th>
+                                <th>Salaire de base</th>
+                                <th>Primes</th>
+                                <th>Retenues</th>
+                                <th>Heures supp.</th>
+                                <th>Salaire net</th>
+                                <th>Statut</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="payroll-table-body">
+                            <!-- Les bulletins seront ajoutés dynamiquement -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Gestion des Utilisateurs -->
+            <section id="users" class="page-content">
+                <div class="content-header">
+                    <h1>Gestion des Utilisateurs</h1>
+                    <button class="btn btn-primary" id="add-user-btn">+ Créer un utilisateur</button>
+                </div>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Nom</th>
+                                <th>Email</th>
+                                <th>Rôle</th>
+                                <th>Statut</th>
+                                <th>Dernière connexion</th>
+                                <th>IP</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="users-table-body">
+                            <!-- Les utilisateurs seront ajoutés dynamiquement -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Gestion des Rôles & Permissions -->
+            <section id="roles" class="page-content">
+                <div class="content-header">
+                    <h1>Rôles & Permissions</h1>
+                    <div style="display: flex; gap: 12px;">
+                        <button class="btn btn-primary" id="add-role-btn">+ Créer un rôle</button>
+                        <button class="btn btn-secondary" id="add-permission-btn">+ Créer une permission</button>
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+                    <div class="table-container">
+                        <h3 style="margin-bottom: 16px;">Rôles</h3>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Nom du rôle</th>
+                                    <th>Description</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="roles-table-body">
+                                <!-- Les rôles seront ajoutés dynamiquement -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="table-container">
+                        <h3 style="margin-bottom: 16px;">Permissions</h3>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Nom</th>
+                                    <th>Description</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="permissions-table-body">
+                                <!-- Les permissions seront ajoutées dynamiquement -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Gestion des Services -->
+            <section id="services" class="page-content">
+                <div class="content-header">
+                    <h1>Gestion des Services</h1>
+                    <button class="btn btn-primary" id="add-service-btn">+ Créer un service</button>
+                </div>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Nom du service</th>
+                                <th>Responsable</th>
+                                <th>Budget</th>
+                                <th>Effectif</th>
+                                <th>Ancienneté moy.</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="services-table-body">
+                            <!-- Les services seront ajoutés dynamiquement -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Gestion des Contrats -->
+            <section id="contracts" class="page-content">
+                <div class="content-header">
+                    <h1>Gestion des Contrats</h1>
+                    <button class="btn btn-primary" id="add-contract-btn">+ Créer un contrat</button>
+                </div>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Numéro</th>
+                                <th>Employé</th>
+                                <th>Type</th>
+                                <th>Date début</th>
+                                <th>Date fin</th>
+                                <th>Salaire de base</th>
+                                <th>Statut</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="contracts-table-body">
+                            <!-- Les contrats seront ajoutés dynamiquement -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Audit Log -->
+            <section id="audit" class="page-content">
+                <div class="content-header">
+                    <h1>Journal d'Audit</h1>
+                    <div style="display: flex; gap: 12px;">
+                        <select id="audit-filter-user" class="form-group" style="width: auto; padding: 8px;">
+                            <option value="">Tous les utilisateurs</option>
+                        </select>
+                        <select id="audit-filter-action" class="form-group" style="width: auto; padding: 8px;">
+                            <option value="">Toutes les actions</option>
+                            <option value="create">Création</option>
+                            <option value="update">Modification</option>
+                            <option value="delete">Suppression</option>
+                            <option value="login">Connexion</option>
+                            <option value="logout">Déconnexion</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Date/Heure</th>
+                                <th>Utilisateur</th>
+                                <th>Action</th>
+                                <th>Table</th>
+                                <th>Détails</th>
+                            </tr>
+                        </thead>
+                        <tbody id="audit-table-body">
+                            <!-- Les logs seront ajoutés dynamiquement -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modales -->
+    <!-- Modale Ajouter/Modifier employé -->
+    <div id="employee-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="employee-modal-title">Ajouter un employé</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <form id="employee-form" class="modal-form">
+                <input type="hidden" id="employee-id">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div class="form-group">
+                        <label for="employee-lastname">Nom *</label>
+                        <input type="text" id="employee-lastname" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="employee-firstname">Prénom *</label>
+                        <input type="text" id="employee-firstname" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="employee-matricule">Matricule</label>
+                    <input type="text" id="employee-matricule" readonly style="background: #f5f5f5;">
+                    <small style="color: var(--text-secondary); font-size: 12px;">Généré automatiquement</small>
+                </div>
+                <div class="form-group">
+                    <label for="employee-position">Poste *</label>
+                    <select id="employee-position" required>
+                        <option value="">Sélectionner un poste</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="employee-service">Service</label>
+                    <select id="employee-service">
+                        <option value="">Sélectionner un service</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="employee-salary">Salaire de base (FCFA) *</label>
+                    <input type="number" id="employee-salary" required min="0" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label for="employee-contract">Type de contrat *</label>
+                    <select id="employee-contract" required>
+                        <option value="">Sélectionner</option>
+                        <option value="CDI">CDI</option>
+                        <option value="CDD">CDD</option>
+                        <option value="Stage">Stage</option>
+                        <option value="Freelance">Freelance</option>
+                    </select>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div class="form-group">
+                        <label for="employee-hiredate">Date d'embauche *</label>
+                        <input type="date" id="employee-hiredate" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="employee-departure-date">Date de départ</label>
+                        <input type="date" id="employee-departure-date">
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div class="form-group">
+                        <label for="employee-birthplace">Lieu de naissance</label>
+                        <input type="text" id="employee-birthplace">
+                    </div>
+                    <div class="form-group">
+                        <label for="employee-marital-status">Situation matrimoniale</label>
+                        <select id="employee-marital-status">
+                            <option value="">Sélectionner</option>
+                            <option value="Célibataire">Célibataire</option>
+                            <option value="Marié(e)">Marié(e)</option>
+                            <option value="Divorcé(e)">Divorcé(e)</option>
+                            <option value="Veuf(ve)">Veuf(ve)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="employee-children">Nombre d'enfants</label>
+                    <input type="number" id="employee-children" min="0" value="0">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary modal-cancel">Annuler</button>
+                    <button type="submit" class="btn btn-primary">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modale Ajouter/Modifier poste -->
+    <div id="position-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="position-modal-title">Ajouter un poste</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <form id="position-form" class="modal-form">
+                <input type="hidden" id="position-id">
+                <div class="form-group">
+                    <label for="position-title">Intitulé du poste *</label>
+                    <input type="text" id="position-title" required>
+                </div>
+                <div class="form-group">
+                    <label for="position-department">Département *</label>
+                    <input type="text" id="position-department" required>
+                </div>
+                <div class="form-group">
+                    <label for="position-salary-min">Salaire minimum *</label>
+                    <input type="number" id="position-salary-min" required min="0" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label for="position-salary-max">Salaire maximum *</label>
+                    <input type="number" id="position-salary-max" required min="0" step="0.01">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary modal-cancel">Annuler</button>
+                    <button type="submit" class="btn btn-primary">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modale Demander un congé -->
+    <div id="leave-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Demander un congé</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <form id="leave-form" class="modal-form">
+                <div class="form-group">
+                    <label for="leave-employee">Employé *</label>
+                    <select id="leave-employee" required>
+                        <option value="">Sélectionner un employé</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="leave-type">Type de congé *</label>
+                    <select id="leave-type" required>
+                        <option value="">Sélectionner</option>
+                        <option value="Congés payés">Congés payés</option>
+                        <option value="Maladie">Maladie</option>
+                        <option value="Personnel">Personnel</option>
+                        <option value="Formation">Formation</option>
+                        <option value="Maternité/Paternité">Maternité/Paternité</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="leave-start">Date début *</label>
+                    <input type="date" id="leave-start" required>
+                </div>
+                <div class="form-group">
+                    <label for="leave-end">Date fin *</label>
+                    <input type="date" id="leave-end" required>
+                </div>
+                <div class="form-group">
+                    <label for="leave-reason">Motif</label>
+                    <textarea id="leave-reason" rows="3"></textarea>
+                </div>
+                <div class="form-group" id="leave-balance-info" style="padding: 12px; background: #e3f2fd; border-radius: 8px; display: none;">
+                    <strong>Solde de congés restant : <span id="leave-balance-value">0</span> jour(s)</strong>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary modal-cancel">Annuler</button>
+                    <button type="submit" class="btn btn-primary">Envoyer la demande</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modale Validation/Refus congé -->
+    <div id="leave-validation-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="leave-validation-title">Valider un congé</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <form id="leave-validation-form" class="modal-form">
+                <input type="hidden" id="leave-validation-id">
+                <div class="form-group">
+                    <label>Employé</label>
+                    <input type="text" id="leave-validation-employee" readonly style="background: #f5f5f5;">
+                </div>
+                <div class="form-group">
+                    <label>Type de congé</label>
+                    <input type="text" id="leave-validation-type" readonly style="background: #f5f5f5;">
+                </div>
+                <div class="form-group">
+                    <label>Période</label>
+                    <input type="text" id="leave-validation-period" readonly style="background: #f5f5f5;">
+                </div>
+                <div class="form-group">
+                    <label for="leave-validation-comment">Commentaire de validation *</label>
+                    <textarea id="leave-validation-comment" rows="3" required placeholder="Ajouter un commentaire..."></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary modal-cancel">Annuler</button>
+                    <button type="button" class="btn btn-danger" id="leave-reject-btn">Refuser</button>
+                    <button type="submit" class="btn btn-success">Valider</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modale Ajouter un pointage -->
+    <div id="attendance-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="attendance-modal-title">Ajouter un pointage</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <form id="attendance-form" class="modal-form">
+                <input type="hidden" id="attendance-id">
+                <div class="form-group">
+                    <label for="attendance-employee">Employé *</label>
+                    <select id="attendance-employee" required>
+                        <option value="">Sélectionner un employé</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="attendance-date">Date *</label>
+                    <input type="date" id="attendance-date" required>
+                </div>
+                <div class="form-group">
+                    <label for="attendance-time-in">Heure d'arrivée *</label>
+                    <input type="time" id="attendance-time-in" required>
+                </div>
+                <div class="form-group">
+                    <label for="attendance-time-out">Heure de départ *</label>
+                    <input type="time" id="attendance-time-out" required>
+                </div>
+                <div class="form-group" id="attendance-delay-info" style="padding: 12px; background: #fff3cd; border-radius: 8px; display: none;">
+                    <strong>Retard détecté : <span id="attendance-delay-value">0</span> minute(s)</strong>
+                </div>
+                <div class="form-group">
+                    <label for="attendance-delay-justification">Justification du retard (si applicable)</label>
+                    <textarea id="attendance-delay-justification" rows="2" placeholder="Raison du retard..."></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary modal-cancel">Annuler</button>
+                    <button type="submit" class="btn btn-primary">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modale Liste des employés -->
+    <div id="employees-detail-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Liste des employés</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="table-container" style="box-shadow: none; padding: 0;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Nom</th>
+                                <th>Prénom</th>
+                                <th>Poste</th>
+                                <th>Salaire</th>
+                                <th>Contrat</th>
+                                <th>Date d'embauche</th>
+                            </tr>
+                        </thead>
+                        <tbody id="employees-detail-table-body">
+                            <!-- Les employés seront ajoutés dynamiquement -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modale Absences en cours -->
+    <div id="absences-detail-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Absences en cours</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="absences-detail-content">
+                    <!-- Le contenu sera ajouté dynamiquement -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modale Heures supplémentaires -->
+    <div id="overtime-detail-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Détails des heures supplémentaires</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="table-container" style="box-shadow: none; padding: 0;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Employé</th>
+                                <th>Heures travaillées</th>
+                                <th>Heures supplémentaires</th>
+                            </tr>
+                        </thead>
+                        <tbody id="overtime-detail-table-body">
+                            <!-- Les heures sup seront ajoutées dynamiquement -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modale Alertes RH -->
+    <div id="alerts-detail-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Alertes RH</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="alerts-detail-content">
+                    <!-- Le contenu sera ajouté dynamiquement -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modale Générer bulletin de paie -->
+    <div id="payslip-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Générer un bulletin de paie</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <form id="payslip-form" class="modal-form">
+                <div class="form-group">
+                    <label for="payslip-employee">Employé *</label>
+                    <select id="payslip-employee" required>
+                        <option value="">Sélectionner un employé</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="payslip-period">Période *</label>
+                    <input type="month" id="payslip-period" required>
+                </div>
+                <div class="form-group">
+                    <label for="payslip-bonus">Primes</label>
+                    <input type="number" id="payslip-bonus" min="0" step="0.01" value="0">
+                </div>
+                <div class="form-group">
+                    <label for="payslip-deduction">Retenues</label>
+                    <input type="number" id="payslip-deduction" min="0" step="0.01" value="0">
+                </div>
+                <div class="form-group">
+                    <label for="payslip-overtime">Heures supplémentaires</label>
+                    <input type="number" id="payslip-overtime" min="0" step="0.1" value="0">
+                </div>
+                <div class="form-group">
+                    <label for="payslip-advance">Avances sur salaire</label>
+                    <input type="number" id="payslip-advance" min="0" step="0.01" value="0">
+                </div>
+                <div class="form-group">
+                    <label for="payslip-status">Statut *</label>
+                    <select id="payslip-status" required>
+                        <option value="BROUILLON">BROUILLON</option>
+                        <option value="VALIDE">VALIDE</option>
+                        <option value="PAYE">PAYE</option>
+                    </select>
+                </div>
+                <div style="padding: 16px; background: #f8f9fa; border-radius: 8px; margin-top: 16px;">
+                    <h4 style="margin-bottom: 12px; font-size: 14px;">Calcul automatique :</h4>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 13px;">
+                        <div>Cotisations sociales : <strong id="payslip-contributions">0 FCFA</strong></div>
+                        <div>Impôts : <strong id="payslip-taxes">0 FCFA</strong></div>
+                        <div style="grid-column: 1 / -1; margin-top: 8px; padding-top: 8px; border-top: 1px solid #dee2e6;">
+                            <strong>Salaire net : <span id="payslip-net-preview">0 FCFA</span></strong>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary modal-cancel">Annuler</button>
+                    <button type="submit" class="btn btn-primary">Générer le bulletin</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modales pour les nouveaux modules -->
+    <!-- Modale Utilisateur -->
+    <div id="user-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="user-modal-title">Créer un utilisateur</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <form id="user-form" class="modal-form">
+                <input type="hidden" id="user-id">
+                <div class="form-group">
+                    <label for="user-name">Nom complet *</label>
+                    <input type="text" id="user-name" required>
+                </div>
+                <div class="form-group">
+                    <label for="user-email">Email *</label>
+                    <input type="email" id="user-email" required>
+                </div>
+                <div class="form-group">
+                    <label for="user-password">Mot de passe *</label>
+                    <input type="password" id="user-password" minlength="6">
+                </div>
+                <div class="form-group">
+                    <label for="user-role">Rôle *</label>
+                    <select id="user-role" required>
+                        <option value="">Sélectionner un rôle</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="user-status">Statut *</label>
+                    <select id="user-status" required>
+                        <option value="ACTIF">ACTIF</option>
+                        <option value="INACTIF">INACTIF</option>
+                        <option value="SUSPENDU">SUSPENDU</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary modal-cancel">Annuler</button>
+                    <button type="submit" class="btn btn-primary">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modale Rôle -->
+    <div id="role-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="role-modal-title">Créer un rôle</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <form id="role-form" class="modal-form">
+                <input type="hidden" id="role-id">
+                <div class="form-group">
+                    <label for="role-name">Nom du rôle *</label>
+                    <input type="text" id="role-name" required>
+                </div>
+                <div class="form-group">
+                    <label for="role-description">Description</label>
+                    <textarea id="role-description" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Permissions</label>
+                    <div id="role-permissions-list" style="max-height: 200px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px; padding: 12px;">
+                        <!-- Les permissions seront ajoutées dynamiquement -->
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary modal-cancel">Annuler</button>
+                    <button type="submit" class="btn btn-primary">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modale Permission -->
+    <div id="permission-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="permission-modal-title">Créer une permission</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <form id="permission-form" class="modal-form">
+                <input type="hidden" id="permission-id">
+                <div class="form-group">
+                    <label for="permission-name">Nom de la permission *</label>
+                    <input type="text" id="permission-name" required placeholder="ex: employees.create">
+                </div>
+                <div class="form-group">
+                    <label for="permission-description">Description</label>
+                    <textarea id="permission-description" rows="3"></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary modal-cancel">Annuler</button>
+                    <button type="submit" class="btn btn-primary">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modale Service -->
+    <div id="service-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="service-modal-title">Créer un service</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <form id="service-form" class="modal-form">
+                <input type="hidden" id="service-id">
+                <div class="form-group">
+                    <label for="service-name">Nom du service *</label>
+                    <input type="text" id="service-name" required>
+                </div>
+                <div class="form-group">
+                    <label for="service-manager">Responsable</label>
+                    <select id="service-manager">
+                        <option value="">Sélectionner un responsable</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="service-budget">Budget annuel (FCFA)</label>
+                    <input type="number" id="service-budget" min="0" step="0.01">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary modal-cancel">Annuler</button>
+                    <button type="submit" class="btn btn-primary">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modale Contrat -->
+    <div id="contract-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="contract-modal-title">Créer un contrat</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <form id="contract-form" class="modal-form">
+                <input type="hidden" id="contract-id">
+                <div class="form-group">
+                    <label for="contract-employee">Employé *</label>
+                    <select id="contract-employee" required>
+                        <option value="">Sélectionner un employé</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="contract-type">Type de contrat *</label>
+                    <select id="contract-type" required>
+                        <option value="">Sélectionner</option>
+                        <option value="CDI">CDI</option>
+                        <option value="CDD">CDD</option>
+                        <option value="Stage">Stage</option>
+                        <option value="Freelance">Freelance</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="contract-start-date">Date début *</label>
+                    <input type="date" id="contract-start-date" required>
+                </div>
+                <div class="form-group">
+                    <label for="contract-end-date">Date fin</label>
+                    <input type="date" id="contract-end-date">
+                </div>
+                <div class="form-group">
+                    <label for="contract-base-salary">Salaire de base (FCFA) *</label>
+                    <input type="number" id="contract-base-salary" required min="0" step="0.01">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary modal-cancel">Annuler</button>
+                    <button type="submit" class="btn btn-primary">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modale Historique de connexion utilisateur -->
+    <div id="user-history-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Historique de connexion</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div style="margin-bottom: 16px;">
+                    <p><strong>Utilisateur :</strong> <span id="user-history-name"></span></p>
+                    <p><strong>Email :</strong> <span id="user-history-email"></span></p>
+                </div>
+                <div class="table-container" style="box-shadow: none; padding: 0;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Date/Heure</th>
+                                <th>Adresse IP</th>
+                            </tr>
+                        </thead>
+                        <tbody id="user-history-table-body">
+                            <!-- L'historique sera ajouté dynamiquement -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="api/api.js"></script>
+    <script src="app.js"></script>
+    <script src="modules.js"></script>
+</body>
+</html>
+
+

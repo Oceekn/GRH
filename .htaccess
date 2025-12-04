@@ -1,0 +1,24 @@
+# Configuration Apache pour l'application GRH
+
+# Activer le moteur de réécriture
+RewriteEngine On
+
+# Autoriser l'accès aux fichiers API (pas besoin de <Directory> dans .htaccess)
+# Les fichiers dans api/ sont accessibles par défaut
+
+# Gestion des erreurs
+ErrorDocument 404 /GRH/index.html
+
+# Headers CORS pour développement
+<IfModule mod_headers.c>
+    Header set Access-Control-Allow-Origin "*"
+    Header set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+    Header set Access-Control-Allow-Headers "Content-Type, Authorization"
+</IfModule>
+
+# Protection des fichiers sensibles
+<FilesMatch "^(config\.php|\.htaccess)$">
+    Require all denied
+</FilesMatch>
+
+
