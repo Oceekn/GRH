@@ -1,26 +1,17 @@
 <?php
 /**
  * API pour la gestion des utilisateurs
+ * RHorizon - Système de Gestion des Ressources Humaines
  */
 
 require_once '../config.php';
+require_once '../permissions.php';
 
 $pdo = getDBConnection();
 $method = $_SERVER['REQUEST_METHOD'];
 $userId = requireAuth();
 
-// Vérifier que l'utilisateur est admin
-$stmt = $pdo->prepare("
-    SELECT r.nomRole FROM Utilisateur u
-    LEFT JOIN Role r ON u.roleId = r.roleId
-    WHERE u.utilisateurId = ?
-");
-$stmt->execute([$userId]);
-$user = $stmt->fetch();
-
-if (!$user || ($user['nomRole'] !== 'ADMIN' && $user['nomRole'] !== 'Administrateur')) {
-    sendError('Accès refusé - Administrateur requis', 403);
-}
+$permissionManager = PermissionManager::requirePermission($pdo, $userId, 'USER_MANAGE');
 
 switch ($method) {
     case 'GET':

@@ -1,9 +1,12 @@
 <?php
 /**
  * API pour la gestion de la paie
+ * RHorizon - Système de Gestion des Ressources Humaines
  */
 
 require_once '../config.php';
+require_once '../permissions.php';
+require_once '../mail.php';
 
 $pdo = getDBConnection();
 $method = $_SERVER['REQUEST_METHOD'];
@@ -12,28 +15,34 @@ $userId = requireAuth();
 switch ($method) {
     case 'GET':
         $id = $_GET['id'] ?? null;
-        if ($id) {
+        $action = $_GET['action'] ?? null;
+
+        if ($action === 'download') {
+            downloadPayslip($pdo, $id, $userId);
+        } elseif ($id) {
             getPayslip($pdo, $id);
         } else {
             getPayslips($pdo);
         }
         break;
-    
+
     case 'POST':
         $action = $_GET['action'] ?? 'create';
         if ($action === 'validate') {
             validatePayslip($pdo, $userId);
+        } elseif ($action === 'pay') {
+            payPayslip($pdo, $userId);
         } else {
             createPayslip($pdo, $userId);
         }
         break;
-    
+
     case 'PUT':
         $id = $_GET['id'] ?? null;
         if (!$id) sendError('ID bulletin requis');
         updatePayslip($pdo, $id, $userId);
         break;
-    
+
     default:
         sendError('Méthode non autorisée', 405);
 }
@@ -243,14 +252,212 @@ function validatePayslip($pdo, $userId) {
 
 function updatePayslip($pdo, $id, $userId) {
     $data = getJSONInput();
-    
+
     if (isset($data['status'])) {
         $stmt = $pdo->prepare("UPDATE Salaire SET statut = ? WHERE salaireId = ?");
         $stmt->execute([$data['status'], $id]);
         logAudit($pdo, $userId, 'UPDATE', 'Salaire', $id);
     }
-    
+
     getPayslip($pdo, $id);
+}
+
+function downloadPayslip($pdo, $id, $userId) {
+    if (!$id) sendError('ID bulletin requis');
+
+    $stmt = $pdo->prepare("
+        SELECT s.*, CONCAT(e.prenom, ' ', e.nom) as nomEmploye, e.email, e.matricule, bp.numeroBulletin
+        FROM Salaire s
+        INNER JOIN Employe e ON s.employeId = e.employeId
+        LEFT JOIN BulletinPaie bp ON s.salaireId = bp.salaireId
+        WHERE s.salaireId = ?
+    ");
+    $stmt->execute([$id]);
+    $payslip = $stmt->fetch();
+
+    if (!$payslip) sendError('Bulletin non trouvé', 404);
+
+    // Récupérer primes et déductions
+    $stmt = $pdo->prepare("SELECT * FROM Prime WHERE salaireId = ?");
+    $stmt->execute([$id]);
+    $primes = $stmt->fetchAll();
+
+    $stmt = $pdo->prepare("SELECT * FROM Deduction WHERE salaireId = ?");
+    $stmt->execute([$id]);
+    $deductions = $stmt->fetchAll();
+
+    // Générer le PDF du bulletin
+    $pdfContent = generatePayslipPDF($payslip, $primes, $deductions);
+
+    // Si statut est PAYÉ, envoyer l'email
+    if ($payslip['statut'] === 'PAYE') {
+        $mailer = new Mailer();
+        $payslipData = [
+            'period' => date('F Y', strtotime($payslip['mois'])),
+            'baseSalary' => floatval($payslip['salaireBase']),
+            'netSalary' => floatval($payslip['salaireNet']),
+            'bonus' => floatval(array_sum(array_column($primes, 'montant'))),
+            'contributions' => floatval($payslip['cotisations']),
+            'taxes' => floatval($payslip['impots']),
+            'deduction' => floatval(array_sum(array_column($deductions, 'montant')))
+        ];
+
+        $mailer->sendPayslip($payslip['email'], $payslip['nomEmploye'], $payslipData, '');
+        logAudit($pdo, $userId, 'VIEW', 'BulletinPaie', $id, ['action' => 'DOWNLOAD_AND_SEND_EMAIL']);
+    } else {
+        logAudit($pdo, $userId, 'VIEW', 'BulletinPaie', $id, ['action' => 'DOWNLOAD']);
+    }
+
+    // Envoyer le PDF
+    header('Content-Type: application/pdf');
+    header('Content-Disposition: attachment; filename="bulletin_' . $payslip['matricule'] . '_' . date('Y-m', strtotime($payslip['mois'])) . '.pdf"');
+    echo $pdfContent;
+    exit;
+}
+
+function payPayslip($pdo, $userId) {
+    $id = $_GET['id'] ?? null;
+    if (!$id) sendError('ID bulletin requis');
+
+    // Vérifier les permissions
+    requirePermission('SALARY_MANAGE');
+
+    $stmt = $pdo->prepare("
+        SELECT s.*, e.email, CONCAT(e.prenom, ' ', e.nom) as nomEmploye
+        FROM Salaire s
+        INNER JOIN Employe e ON s.employeId = e.employeId
+        WHERE s.salaireId = ?
+    ");
+    $stmt->execute([$id]);
+    $payslip = $stmt->fetch();
+
+    if (!$payslip) sendError('Bulletin non trouvé', 404);
+
+    if ($payslip['statut'] !== 'VALIDE') {
+        sendError('Seuls les bulletins validés peuvent être payés');
+    }
+
+    // Mettre à jour le statut à PAYÉ et ajouter la date de paiement
+    $stmt = $pdo->prepare("
+        UPDATE Salaire
+        SET statut = 'PAYE', datePaiement = CURDATE()
+        WHERE salaireId = ?
+    ");
+    $stmt->execute([$id]);
+
+    logAudit($pdo, $userId, 'UPDATE', 'Salaire', $id, ['action' => 'PAYMENT_MARKED']);
+
+    // Récupérer le bulletin mis à jour
+    getPayslip($pdo, $id);
+}
+
+function generatePayslipPDF($payslip, $primes, $deductions) {
+    // Utiliser une bibliothèque comme TCPDF ou FPDF pour générer le PDF
+    // Pour simplifier, on retourne du HTML pour le moment
+    // En production, utiliser TCPDF ou mPDF
+
+    $totalPrimes = array_sum(array_column($primes, 'montant'));
+    $totalDeductions = array_sum(array_column($deductions, 'montant'));
+
+    $html = "
+    <html>
+    <head>
+        <meta charset='UTF-8'>
+        <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            .header { border-bottom: 3px solid #2c3e50; padding-bottom: 20px; text-align: center; }
+            .title { font-size: 24px; font-weight: bold; }
+            .subtitle { font-size: 14px; color: #666; }
+            .section { margin-top: 20px; }
+            .section-title { font-size: 14px; font-weight: bold; background-color: #2c3e50; color: white; padding: 5px; }
+            .detail { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #ddd; }
+            .total { font-weight: bold; font-size: 16px; }
+        </style>
+    </head>
+    <body>
+        <div class='header'>
+            <div class='title'>BULLETIN DE PAIE</div>
+            <div class='subtitle'>RHorizon - Système de Gestion des Ressources Humaines</div>
+        </div>
+
+        <div class='section'>
+            <div class='section-title'>INFORMATIONS EMPLOYÉ</div>
+            <div class='detail'>
+                <span>Nom:</span>
+                <span>" . htmlspecialchars($payslip['nomEmploye']) . "</span>
+            </div>
+            <div class='detail'>
+                <span>Matricule:</span>
+                <span>" . htmlspecialchars($payslip['matricule']) . "</span>
+            </div>
+            <div class='detail'>
+                <span>Période:</span>
+                <span>" . date('F Y', strtotime($payslip['mois'])) . "</span>
+            </div>
+        </div>
+
+        <div class='section'>
+            <div class='section-title'>SALAIRE ET RÉMUNÉRATIONS</div>
+            <div class='detail'>
+                <span>Salaire de base:</span>
+                <span>" . number_format($payslip['salaireBase'], 2, ',', ' ') . " FCFA</span>
+            </div>
+            <div class='detail'>
+                <span>Heures supplémentaires:</span>
+                <span>" . $payslip['heuresSupplementaires'] . " h</span>
+            </div>";
+
+    if ($totalPrimes > 0) {
+        $html .= "<div class='detail'>
+                <span>Primes:</span>
+                <span>" . number_format($totalPrimes, 2, ',', ' ') . " FCFA</span>
+            </div>";
+    }
+
+    $html .= "
+        </div>
+
+        <div class='section'>
+            <div class='section-title'>RETENUES ET DÉDUCTIONS</div>
+            <div class='detail'>
+                <span>Cotisations:</span>
+                <span>- " . number_format($payslip['cotisations'], 2, ',', ' ') . " FCFA</span>
+            </div>
+            <div class='detail'>
+                <span>Impôts:</span>
+                <span>- " . number_format($payslip['impots'], 2, ',', ' ') . " FCFA</span>
+            </div>";
+
+    if ($totalDeductions > 0) {
+        $html .= "<div class='detail'>
+                <span>Déductions:</span>
+                <span>- " . number_format($totalDeductions, 2, ',', ' ') . " FCFA</span>
+            </div>";
+    }
+
+    $html .= "
+        </div>
+
+        <div class='section'>
+            <div class='section-title total'>RÉSUMÉ</div>
+            <div class='detail'>
+                <span>Salaire Brut:</span>
+                <span>" . number_format($payslip['salaireTotal'], 2, ',', ' ') . " FCFA</span>
+            </div>
+            <div class='detail total'>
+                <span>Salaire Net:</span>
+                <span>" . number_format($payslip['salaireNet'], 2, ',', ' ') . " FCFA</span>
+            </div>
+            <div class='detail'>
+                <span>Statut:</span>
+                <span>" . htmlspecialchars($payslip['statut']) . "</span>
+            </div>
+        </div>
+    </body>
+    </html>
+    ";
+
+    return $html;
 }
 
 
